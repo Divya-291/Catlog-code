@@ -1,0 +1,65 @@
+import java.math.BigInteger;
+import java.util.*;
+import org.json.JSONObject;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+public class ShamirSecretSharing {
+
+    public static void main(String[] args) throws Exception {
+        // Load JSON input (replace with your file path)
+        String jsonStr1 = new String(Files.readAllBytes(Paths.get("testcase1.json")));
+        String jsonStr2 = new String(Files.readAllBytes(Paths.get("testcase2.json")));
+
+        BigInteger c1 = findSecret(jsonStr1);
+        BigInteger c2 = findSecret(jsonStr2);
+
+        System.out.println("Secret from Test Case 1: " + c1);
+        System.out.println("Secret from Test Case 2: " + c2);
+    }
+
+    public static BigInteger findSecret(String jsonStr) {
+        JSONObject json = new JSONObject(jsonStr);
+        int n = json.getJSONObject("keys").getInt("n");
+        int k = json.getJSONObject("keys").getInt("k");
+
+        List<BigInteger> x = new ArrayList<>();
+        List<BigInteger> y = new ArrayList<>();
+
+        for (String key : json.keySet()) {
+            if (key.equals("keys")) continue;
+
+            int xi = Integer.parseInt(key);
+            JSONObject point = json.getJSONObject(key);
+            int base = Integer.parseInt(point.getString("base"));
+            String value = point.getString("value");
+
+            BigInteger yi = new BigInteger(value, base);
+
+            x.add(BigInteger.valueOf(xi));
+            y.add(yi);
+
+            if (x.size() == k) break; // Only need k points
+        }
+
+        return lagrangeInterpolation(x, y, BigInteger.ZERO);
+    }
+
+    public static BigInteger lagrangeInterpolation(List<BigInteger> x, List<BigInteger> y, BigInteger xVal) {
+        BigInteger result = BigInteger.ZERO;
+
+        for (int i = 0; i < x.size(); i++) {
+            BigInteger term = y.get(i);
+            for (int j = 0; j < x.size(); j++) {
+                if (j != i) {
+                    BigInteger numerator = xVal.subtract(x.get(j));
+                    BigInteger denominator = x.get(i).subtract(x.get(j));
+                    term = term.multiply(numerator).divide(denominator);
+                }
+            }
+            result = result.add(term);
+        }
+
+        return result;
+    }
+}
