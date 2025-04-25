@@ -1,0 +1,75 @@
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+
+typedef struct {
+    int x;
+    int base;
+    char value[100];
+} Point;
+
+long double baseToDecimal(const char *value, int base) {
+    long double result = 0;
+    for (int i = 0; value[i]; ++i) {
+        int digit = 0;
+        // Ensure digit is valid
+        if (value[i] >= '0' && value[i] <= '9') {
+            digit = value[i] - '0';
+        }
+        else if (value[i] >= 'a' && value[i] <= 'z') {
+            digit = 10 + (value[i] - 'a');
+        }
+        else if (value[i] >= 'A' && value[i] <= 'Z') {
+            digit = 10 + (value[i] - 'A');
+        }
+        else {
+            printf("Error: Invalid character in value: %c\n", value[i]);
+            return -1;  // Return error value
+        }
+        result = result * base + digit;
+    }
+    return result;
+}
+
+long double lagrangeInterpolation(Point points[], int k) {
+    long double result = 0.0;
+    for (int i = 0; i < k; i++) {
+        long double xi = points[i].x;
+        long double yi = baseToDecimal(points[i].value, points[i].base);
+        if (yi == -1) { // Check for error during base-to-decimal conversion
+            return -1;
+        }
+        printf("Point %d: (x = %d, value = %s, decimal = %.0Lf)\n", i + 1, xi, points[i].value, yi);
+        
+        long double term = yi;
+        for (int j = 0; j < k; j++) {
+            if (j != i) {
+                long double xj = points[j].x;
+                term *= (0 - xj) / (xi - xj);
+            }
+        }
+        result += term;
+    }
+    return result;
+}
+
+int main() {
+    // Define the simplified test case (only 4 points)
+    Point tc[] = {
+        {1, 6,  "13444211440455345511"},
+        {2, 15, "aed7015a346d63"},
+        {3, 15, "6aeeb69631c227c"},
+        {4, 16, "e1b5e05623d881f"}
+    };
+    int k = 4;  // Total number of points in this test case
+
+    long double secret = lagrangeInterpolation(tc, k);
+
+    if (secret == -1) {
+        printf("Error: Segmentation fault detected during calculation.\n");
+    } else {
+        printf("Secret from Test Case: %.0Lf\n", secret);
+    }
+    
+    return 0;
+}
